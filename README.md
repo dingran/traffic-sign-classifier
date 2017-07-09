@@ -13,7 +13,25 @@ and the data set can be downloaded here at [traffic-signs-data.zip](https://d17h
 
 ## Table of Contents
 
-to be inserted
+* [Introduction](#introduction)
+  * [Goals](#goals)
+  * [Performance Summary](#performance-summary)
+  * [Key Files](#key-files)
+* [Data Set Exploration](#data-set-exploration)
+* [Design and Test a Model Architecture](#design-and-test-a-model-architecture)
+  * [Data Pre\-processing and Augmentation](#data-pre-processing-and-augmentation)
+    * [Data Pre\-processing](#data-pre-processing)
+    * [Data set augmentation](#data-set-augmentation)
+  * [Model Architecture](#model-architecture)
+    * [LeNet](#lenet)
+    * [Sermanet](#sermanet)
+  * [Model Training](#model-training)
+  * [Results and Discussion](#results-and-discussion)
+  * [Notes on Model Development](#notes-on-model-development)
+* [Test Models on New Images](#test-models-on-new-images)
+  * [New Images](#new-images)
+  * [Predictions](#predictions)
+  * [Visualizing the Neural Network](#visualizing-the-neural-network)
 
 
 ---
@@ -103,6 +121,8 @@ Here are example images from a few classes (a full survey is available in [Traff
 
 # Design and Test a Model Architecture
 
+
+<!--
 ## Qualitative Findings
 
 I started with a relatively well-known network (LeNet5) with settings to keep the network size small in order to iterate more quickly on a few topics and get some qualitative intuition. 
@@ -116,7 +136,7 @@ For example:
     * Is it better to "equalize" the sample count in each class or should I keep the relative occurrence as-is?
     * Does having much more augmented data help accuracy?
     * See [Data Autmentation](#data-augmentation)
-
+-->
 
 ## Data Pre-processing and Augmentation
 
@@ -326,7 +346,7 @@ The original images, images after pre-processing and the top-5 softmax output la
 <img src="./writing/test_new.png" width="150">
 
 
-## (Optional) Visualizing the Neural Network
+## Visualizing the Neural Network
 
 A set of feature maps for each of images in the new test image set are included in the last cell in the HTML reports for lenet and sermanet. One example is shown below.
 
