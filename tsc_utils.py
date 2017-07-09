@@ -179,19 +179,19 @@ params_orig_lenet = dict(conv1_k=5, conv1_d=6, conv1_p=0.95,
                          conv2_k=5, conv2_d=16, conv2_p=0.95,
                          fc3_size=120, fc3_p=0.5,
                          fc4_size=84, fc4_p=0.5,
-                         num_classes=43, model_name='lenet')
+                         num_classes=43, model_name='lenet', name='orig_lenet')
 
 params_big_lenet = dict(conv1_k=5, conv1_d=6 * 4, conv1_p=0.8,
                         conv2_k=5, conv2_d=16 * 4, conv2_p=0.8,
                         fc3_size=120 * 4, fc3_p=0.5,
                         fc4_size=84 * 3, fc4_p=0.5,
-                        num_classes=43, model_name='lenet')
+                        num_classes=43, model_name='lenet', name='big_lenet')
 
 params_huge_lenet = dict(conv1_k=5, conv1_d=6 * 8, conv1_p=0.8,
                          conv2_k=5, conv2_d=16 * 8, conv2_p=0.8,
                          fc3_size=120 * 8, fc3_p=0.5,
                          fc4_size=84 * 6, fc4_p=0.5,
-                         num_classes=43, model_name='lenet')
+                         num_classes=43, model_name='lenet', name='huge_lenet')
 
 
 def lenet(x, params, is_training):
@@ -236,13 +236,13 @@ params_sermanet_v2 = dict(conv1_k=5, conv1_d=32, conv1_p=0.9,
                           conv2_k=5, conv2_d=64, conv2_p=0.8,
                           conv3_k=5, conv3_d=128, conv3_p=0.7,
                           fc4_size=1024, fc4_p=0.5,
-                          num_classes=43, model_name='sermanet_v2')
+                          num_classes=43, model_name='sermanet_v2', name='standard')
 
 params_sermanet_v2_big = dict(conv1_k=5, conv1_d=32 * 2, conv1_p=0.9,
                               conv2_k=5, conv2_d=64 * 2, conv2_p=0.8,
                               conv3_k=5, conv3_d=128 * 2, conv3_p=0.7,
                               fc4_size=1024 * 2, fc4_p=0.5,
-                              num_classes=43, model_name='sermanet_v2')
+                              num_classes=43, model_name='sermanet_v2', name='big')
 
 
 def sermanet_v2(x, params, is_training):
@@ -300,12 +300,12 @@ def sermanet_v2(x, params, is_training):
 params_sermanet = dict(conv1_k=5, conv1_d=108, conv1_p=0.9,
                        conv2_k=5, conv2_d=108, conv2_p=0.8,
                        fc4_size=100, fc4_p=0.5,
-                       num_classes=43, model_name='sermanet')
+                       num_classes=43, model_name='sermanet', name='standard')
 
 params_sermanet_big = dict(conv1_k=5, conv1_d=100, conv1_p=0.9,
                            conv2_k=5, conv2_d=200, conv2_p=0.8,
                            fc4_size=200, fc4_p=0.5,
-                           num_classes=43, model_name='sermanet')
+                           num_classes=43, model_name='sermanet', name='big')
 
 
 def sermanet(x, params, is_training):
@@ -365,6 +365,8 @@ def train_model(X_train, y_train, X_valid, y_valid, X_test, y_test,
     print('=============================================')
 
     fn = ''
+    model_name = model_params.pop('name', None)
+    print(model_name)
     for k in sorted(model_params.keys()):
         if k != 'num_classes' and k != 'model_name' and k != 'batch_norm':
             fn += k + '_' + str(model_params[k]) + '_'
