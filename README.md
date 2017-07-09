@@ -31,7 +31,7 @@ The goals / steps of this project are the following:
 * Summarize the results with a written report
 
 
-## Models
+## Performance Summary 
 
 Before we dive into the details, here is a quick preview of the models' performance on the (augmented) validation set and the original test set.
 
@@ -40,12 +40,11 @@ Before we dive into the details, here is a quick preview of the models' performa
 | lenet | standard | 139,391  | 95.48% | 97.14% | 
 | lenet | big | 2,137,739  | 98.36% | **99.02%** |
 | sermanet | standard | 1,681,359| 98.27% | 98.82% |
-| sermanet_v2 | standard | 3,972,139  | 98.18% | 98.35% |
 | sermanet | big | 4,351,643  | 98.60% | **99.02%** |
 
-The best results are obtained with model "lenet" (a variant of LeNet5) 
-and "sermanet" (a variant of the multi-scale CNN proposed by [Sermanet / LeCunn paper](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf)) with 
-corresponding parameter sets that result in a large networks.
+
+The final results suggest that with "big" network, lenet and sermanet performed similarly well. The best result 99.02% 
+is slightly better than the performance (98.97%) reported in [Sermanet / LeCunn paper](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf) as well as human performance (98.81%).
 
 In testing with additional images screen captured from Google Street View, both networks achieved **100% accuracy over 11 images, 
 including one "novel" sample** - a sign in a known category but with different background color and additional symbol on the sign.
@@ -53,7 +52,7 @@ including one "novel" sample** - a sign in a known category but with different b
 These two models will be referred to as **lenet** and **sermanet** in this report. 
 Both models will be reported in corresponding HTML reports listed below and both trained netowrks returned
 
-## Files
+## Key Files
 Here is a summary of the key folders and files in this project
 
 README:
@@ -79,6 +78,8 @@ sermanet standard 1681359
 sermanet big 4351643
 sermanet_v2 standard 3972139
 sermanet_v2 big 15796267
+
+| sermanet_v2 | standard | 3,972,139  | 98.18% | 98.35% |
 --->
 
 # Data Set Exploration
@@ -185,125 +186,138 @@ Here is a summary of the data sets:
 
 I used LeNet5 as a starting point due to its good performance on other image classification tasks and relative small network size.
 
-The LeNet model implemented here is slightly different than the classical implementation as summarized below.
+The LeNet model implemented here is slightly different than the classical implementation due to differences in padding and addition of dropout.
 
+Two sets of parameters were used, one is dubbed "standard", the other is "big" which results in a much larger network. 
 
-| Layer         		|     Description (this project)    			| 
-|:---------------------:|:---------------------------------------------:| 
-| Input         		| 32x32x1 grayscale image   							| 
-| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
-| RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
-| Convolution 3x3	    | etc.      									|
-| Fully connected		| etc.        									|
-| Softmax				| etc.        									|
-|						|												|
-|						|												|
+The model is described in the table below.
 
-
-def lenet(x, params, is_training):
-    print(params)
-    do_batch_norm = False
-    if 'batch_norm' in params.keys():
-        if params['batch_norm']:
-            do_batch_norm = True
-
-    with tf.variable_scope('conv1'):
-        conv1 = conv_relu(x, kernel_size=params['conv1_k'], depth=params['conv1_d'], is_training=is_training,
-                          BN=do_batch_norm)
-    with tf.variable_scope('pool1'):
-        pool1 = pool(conv1, size=2)
-        pool1 = tf.cond(is_training, lambda: tf.nn.dropout(pool1, keep_prob=params['conv1_p']), lambda: pool1)
-    with tf.variable_scope('conv2'):
-        conv2 = conv_relu(pool1, kernel_size=params['conv2_k'], depth=params['conv2_d'], is_training=is_training,
-                          BN=do_batch_norm)
-    with tf.variable_scope('pool2'):
-        pool2 = pool(conv2, size=2)
-        pool2 = tf.cond(is_training, lambda: tf.nn.dropout(pool2, keep_prob=params['conv2_p']), lambda: pool2)
-
-    shape = pool2.get_shape().as_list()
-    pool2 = tf.reshape(pool2, [-1, shape[1] * shape[2] * shape[3]])
-    print('lenet pool2 reshaped size: ', pool2.get_shape().as_list())
-
-    with tf.variable_scope('fc3'):
-        fc3 = fully_connected_relu(pool2, size=params['fc3_size'], is_training=is_training, BN=do_batch_norm)
-        fc3 = tf.cond(is_training, lambda: tf.nn.dropout(fc3, keep_prob=params['fc3_p']), lambda: fc3)
-
-    with tf.variable_scope('fc4'):
-        fc4 = fully_connected_relu(fc3, size=params['fc4_size'], is_training=is_training, BN=do_batch_norm)
-        fc4 = tf.cond(is_training, lambda: tf.nn.dropout(fc4, keep_prob=params['fc4_p']), lambda: fc4)
-
-    with tf.variable_scope('out'):
-        logits = fully_connected(fc4, size=params['num_classes'], is_training=is_training)
-
-    return logits
+| Layer Type      		| Layer Name     |     Description ({standard, big})	| 
+|:---:|:---:|:---| 
+| Input         		|               | 32x32x1 grayscale image | 
+| Convolution 5x5     	| conv1     	| 1x1 stride, same padding, outputs 32x32x **{6,24}**, ReLu |
+| Max pooling 2x2      	| pool1      	| 2x2 stride, outputs 16x16x **{6,24}**, dropout 5% |
+| Convolution 5x5	    | conv2         | 1x1 stride, same padding, outputs 16x16x **{16,64}**, ReLu |
+| Max pooling 2x2      	| pool2         | 2x2 stride, outputs 8x8x **{16,64}**, dropout 5% |
+| Flatten | | Flattens output of pool2 |
+| Fully connected		| fc3           | Inputs 1x **{1024, 4096}**, outputs 1x **{120,480}**, ReLu, dropout 50% |
+| Fully connected		| fc4           | Inputs 1x **{120,480}**, outputs 1x **{84,252}**, ReLu, dropout 50% |
+| Fully connected		| out           | Inputs 1x **{84,252}**, outputs 1x43, Softmax |
 
 
 ### Sermanet
 
+The "sermanet" network closely follows [Sermanet / LeCunn paper](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf).
 
+While both lenet and sermanet are based on 2 layers of convolution, ReLu activation followed by max pooling, 
+the biggest difference lies in the way convolution layers are connected to the fully connected layer. 
+In sermanet, both the max pooling output of the first convolution layer (poo1) and the second layer (pool2) are connected to the fully connected layer, thus feeding it with so-called 
+multi-scale features because the two convolution layers are extracting difference features with different levels of abstraction.
 
-### Sermanet_v2
+Similar to LeNet, two sets of parameters are used, and the model architecture is described below.
 
+| Layer Type      		| Layer Name     |     Description ({standard, big})	| 
+|:---:|:---:|:---| 
+| Input         		|               | 32x32x1 grayscale image | 
+| Convolution 5x5     	| conv1     	| 1x1 stride, same padding, outputs 32x32x **{108,100}**, ReLu |
+| Max pooling 2x2      	| pool1      	| 2x2 stride, outputs 16x16x **{108,100}**, dropout 10% |
+| Convolution 5x5	    | conv2         | 1x1 stride, same padding, outputs 16x16x **{108,200}**, ReLu |
+| Max pooling 2x2      	| pool2         | 2x2 stride, outputs 8x8x **{108,200}**, dropout 20% |
+| Flatten | | Flattens and concatenates the outputs of pool1 and pool2 |
+| Fully connected		| fc3           | Inputs 1x **{13824, 19200}**, outputs 1x **{100,200}**, ReLu, dropout 50% |
+| Fully connected		| out           | Inputs 1x **{100,200}**, outputs 1x43, Softmax |
 
 
 ## Model Training
 
+To train the models, I used ```tf.AdamOptimizer()``` optimizing the cross-entropy of the models' Softmax output values. 
+The function managing the training process is ```train_model()``` in [tsc_utils.py](tsc_utils.py), for each model and parameter set, it would first generate a unique name in order to save and 
+restore model properly. 
+
+The learning rate is selected to be 0.001 for training with dataset1 for initial training, 0.0001 with dataset2 for re-training with larger number of samples and 0.00003 with dataset3 for fine tuning.
+
+The training batch is 256, max number of epochs is 1001 and early stopping patience of 10 epochs (i.e. if loss does not improve within 10 epochs the training would stop and best epoch will be saved). 
+In the final training with dataset3, usually training stops at ~50 epochs.
+
+My models were trained on an entry-level GPU - Nvidia GTX 960. It took ~2 hours for lenet and ~10 hours for sermanet, when training with dataset3.
 
 
+## Results and Discussion
 
-#### 2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
+The final results suggest that with "big" network, lenet and sermanet performed similarly well and is slightly better 
+than the performance (98.97%) reported in [Sermanet / LeCunn paper](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf) as well as human performance (98.81%).
 
-My final model consisted of the following layers:
+| Model | Parameter set | No. of trainable parameters | Validation accuracy | Test accuracy | 
+| :---: | ---: | ---: | ---: | ---: | 
+| lenet | standard | 139,391  | 95.48% | 97.14% | 
+| lenet | big | 2,137,739  | 98.36% | **99.02%** |
+| sermanet | standard | 1,681,359| 98.27% | 98.82% |
+| sermanet | big | 4,351,643  | 98.60% | **99.02%** |
 
-| Layer         		|     Description	        					| 
-|:---------------------:|:---------------------------------------------:| 
-| Input         		| 32x32x3 RGB image   							| 
-| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
-| RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
-| Convolution 3x3	    | etc.      									|
-| Fully connected		| etc.        									|
-| Softmax				| etc.        									|
-|						|												|
-|						|												|
- 
+The following plots show the mistake frequencies (blue bars) versus the class label occurrences (orange bars) for the validation set and test set. 
+We can see that the mistake frequency does not correlate class label occurrence. 
+If we did observe an anti-correlation, we could try systematically generating more augmented training examples for under represented classes.
+
+![](writing/validation_error_hist.png)
+![](writing/test_error_hist.png)
 
 
-#### 3. Describe how you trained your model. The discussion can include the type of optimizer, the batch size, number of epochs and any hyperparameters such as learning rate.
+Looking at the mis-classified images from the test set, we can see the majority of them have very poor image quality or 
+are distorted to a degree that is beyond what is covered in the augmented data set (scuh as the 120km/hr signs). 
+There are however a few images in class 21 (Double Curves), that are clearly legible. 
+This is a class that might benefit from more training samples, because we see a high error count in validation set as well.
 
-To train the model, I used an ....
+![](writing/test_errors.png)
 
-#### 4. Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93. Include in the discussion the results on the training, validation and test sets and where in the code these were calculated. Your approach may have been an iterative process, in which case, outline the steps you took to get to the final solution and why you chose those steps. Perhaps your solution involved an already well known implementation or architecture. In this case, discuss why you think the architecture is suitable for the current problem.
+Among the mis-classified images, it might be useful to look at the confusion matrix. We can see the top confusions are:
+* Traffic signs mis-classified as Speed limit(30km/h)
+* Speed limit (60km/h) mis-classified as Speed limit(80km/h)
+* Double curve mis-classified as General caution
 
-My final model results were:
-* training set accuracy of ?
-* validation set accuracy of ? 
-* test set accuracy of ?
+To further improvement performance, in the future I could fine-tune the model with special data sets that contains these top confusions.
 
-If an iterative approach was chosen:
-* What was the first architecture that was tried and why was it chosen?
-* What were some problems with the initial architecture?
-* How was the architecture adjusted and why was it adjusted? Typical adjustments could include choosing a different model architecture, adding or taking away layers (pooling, dropout, convolution, etc), using an activation function or changing the activation function. One common justification for adjusting an architecture would be due to overfitting or underfitting. A high accuracy on the training set but low accuracy on the validation set indicates over fitting; a low accuracy on both sets indicates under fitting.
-* Which parameters were tuned? How were they adjusted and why?
-* What are some of the important design choices and why were they chosen? For example, why might a convolution layer work well with this problem? How might a dropout layer help with creating a successful model?
+![](writing/test_confusion.png)
 
-If a well known architecture was chosen:
-* What architecture was chosen?
-* Why did you believe it would be relevant to the traffic sign application?
-* How does the final model's accuracy on the training, validation and test set provide evidence that the model is working well?
- 
+## Notes on Model Development
+
+The image classification, a convolutional neural network is a natural choice because convolution operations extract features with efficient use of trainable parameters 
+while being robust against features' position in the images.
+
+The reason I picked LeNet as one of the models to use is mainly because LeNet is generally regarded as a good architecture for image classification tasks and is a good benchmark to have. 
+I am very interested to see how it would performance against the more advanced networks.
+
+Sermanet paper provides an interesting alternative approach that uses multi-scale features to feed forward into fully connected layers. 
+Along the same idea, I attempted another network named sermanet_v2 with another convolution layer and flattened all three convolution layers to connect with fully connected layers. 
+Sermanet_v2 has significantly more parameter and turned out to under perform both lenet and sermanet, so its performance is not reported here.
+
+For both networks, I started with the smallest data set in order to iterate more quickly on hyper parameters in the model and in training and settled on learning rate, batch size, 
+and pre-processing steps. To determine the network size, I start with a relative small network, and increase the network size until accuracy in validation diverge from training, 
+which suggests over-fitting (and network being large enough). Then I added in dropout to bring them closer and achieve better accuracy.
+
 
 # Test Models on New Images
 
-#### 1. Choose five German traffic signs found on the web and provide them in the report. For each image, discuss what quality or qualities might be difficult to classify.
+## New Images
 
-Here are five German traffic signs that I found on the web:
+By walking through Google Street View, I collected 11 images from Munich, Germany, as shown below.
 
-![alt text][image4] ![alt text][image5] ![alt text][image6] 
-![alt text][image7] ![alt text][image8]
+![](writing/new_images.png)
 
-The first image might be difficult to classify because ...
+A few of these images might challenge the classifier:
+* test_003: partially occluded
+* test_009: significantly rotated
+* test_010: intentionally scaled to have wrong aspect ratio
+* test_011: compared to Pedestrians images (shown below), this image has the pedestrian symbol, but everything else is a bit different
+    * rectangular shape instead of triangular
+    * blue background with white boundary instead of white background with red boundary
+    * additional drawing of crossing symbol
+    * partially occluded
+
+![](writing/ped.png)
+
+## Predictions
+<img src="./writing/test_new_1.png" width="350"> <img src="./writing/test_new_2.png" width="350">
+ 
 
 #### 2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
 
@@ -318,7 +332,10 @@ Here are the results of the prediction:
 | Slippery Road			| Slippery Road      							|
 
 
-The model was able to correctly guess 4 of the 5 traffic signs, which gives an accuracy of 80%. This compares favorably to the accuracy on the test set of ...
+The model was able to correctly guess 11 of the 11 traffic signs, which gives an accuracy of 100%. It is particularly encouraging to see that test_011 was 
+correctly classified despite of additional marking on the sign, occlusion of trees and a totally difference color scheme (thanks to the robustness of grayscale images and preprocessing)
+
+This compares favorably to the accuracy on the test set of ...
 
 #### 3. Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability. (OPTIONAL: as described in the "Stand Out Suggestions" part of the rubric, visualizations can also be provided such as bar charts)
 
