@@ -316,48 +316,28 @@ A few of these images might challenge the classifier:
 ![](writing/ped.png)
 
 ## Predictions
-<img src="./writing/test_new_1.png" width="350"> <img src="./writing/test_new_2.png" width="350">
- 
-
-#### 2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
-
-Here are the results of the prediction:
-
-| Image			        |     Prediction	        					| 
-|:---------------------:|:---------------------------------------------:| 
-| Stop Sign      		| Stop sign   									| 
-| U-turn     			| U-turn 										|
-| Yield					| Yield											|
-| 100 km/h	      		| Bumpy Road					 				|
-| Slippery Road			| Slippery Road      							|
-
 
 The model was able to correctly guess 11 of the 11 traffic signs, which gives an accuracy of 100%. It is particularly encouraging to see that test_011 was 
 correctly classified despite of additional marking on the sign, occlusion of trees and a totally difference color scheme (thanks to the robustness of grayscale images and preprocessing)
 
-This compares favorably to the accuracy on the test set of ...
+The original images, images after pre-processing and the top-5 softmax output labels are plotted below.
 
-#### 3. Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability. (OPTIONAL: as described in the "Stand Out Suggestions" part of the rubric, visualizations can also be provided such as bar charts)
-
-The code for making predictions on my final model is located in the 11th cell of the Ipython notebook.
-
-For the first image, the model is relatively sure that this is a stop sign (probability of 0.6), and the image does contain a stop sign. The top five soft max probabilities were
-
-| Probability         	|     Prediction	        					| 
-|:---------------------:|:---------------------------------------------:| 
-| .60         			| Stop sign   									| 
-| .20     				| U-turn 										|
-| .05					| Yield											|
-| .04	      			| Bumpy Road					 				|
-| .01				    | Slippery Road      							|
+(click to enlarge)
+<img src="./writing/test_new.png" width="150">
 
 
-For the second image ... 
+## (Optional) Visualizing the Neural Network
+
+A set of feature maps for each of images in the new test image set are included in the last cell in the HTML reports for lenet and sermanet. One example is shown below.
+
+The 24 plots are the 24 output channels of the 1st convolution layer in model lenet with parameter set "big". We can see that some of the channels are particularly excited about 
+the circular outline of the sign but not the inside of the sign, some of the channels emphasize on the top and bottom edge of the horizontal bar, these patterns give some indication 
+about what kind of features might cause the units in the network to fire and eventually triggers a classification in the later stage of the network.
+ 
+![](writing/featuremap.png)
 
 
 
-### (Optional) Visualizing the Neural Network (See Step 4 of the Ipython notebook for more details)
-#### 1. Discuss the visual output of your trained network's feature maps. What characteristics did the neural network use to make classifications?
 
 
 
