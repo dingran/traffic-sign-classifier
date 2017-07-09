@@ -6,7 +6,7 @@ and achieved an accuracy of **99.02%** with a variant of LeNet5 as well as a var
 data preprocessing and augmentation are done with tools in **OpenCV**.
 
 This project is part of Udacity Self-Driving Car Nanodegree (Term1 in May 2017). The project instruction is in [README_udacity.md](README_udacity.md) 
-and the dataset can be downloaded here at [traffic-signs-data.zip](https://d17h27t6h515a5.cloudfront.net/topher/2017/February/5898cd6f_traffic-signs-data/traffic-signs-data.zip)
+and the data set can be downloaded here at [traffic-signs-data.zip](https://d17h27t6h515a5.cloudfront.net/topher/2017/February/5898cd6f_traffic-signs-data/traffic-signs-data.zip)
 
 ---
 
@@ -31,7 +31,7 @@ The goals / steps of this project are the following:
 * Summarize the results with a written report
 
 
-## Model Results Preview
+## Models
 
 Before we dive into the details, here is a quick preview of the models' performance on the (augmented) validation set and the original test set.
 
@@ -47,7 +47,8 @@ The best results are obtained with model "lenet" (a variant of LeNet5)
 and "sermanet" (a variant of the multi-scale CNN proposed by [Sermanet / LeCunn paper](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf)) with 
 corresponding parameter sets that result in a large networks.
 
-In testing with additional images screen captured from Google Street View, both networks
+In testing with additional images screen captured from Google Street View, both networks achieved **100% accuracy over 11 images, 
+including one "novel" sample** - a sign in a known category but with different background color and additional symbol on the sign.
 
 These two models will be referred to as **lenet** and **sermanet** in this report. 
 Both models will be reported in corresponding HTML reports listed below and both trained netowrks returned
@@ -55,18 +56,21 @@ Both models will be reported in corresponding HTML reports listed below and both
 ## Files
 Here is a summary of the key folders and files in this project
 
-* README:
-    * The file you are reading is the project writeup
-    * The original README from udacity is [README_udacity.md](README_udacity.md), which contains project instructions
-* Code:
-    * [Traffic_Sign_Classifier.ipynb](Traffic_Sign_Classifier.ipynb) is Jupyter notebook holding the top-level execution code used in this project
-    * [tsc_utils.py](tsc_utils.py) holds all the code for data preprocessing, augmentation, network implementation and model training routines
-* Reports:
-    * [](Traffic_Sign_Classifier_0613_big_lenet.html)
-* [test_images_output](test_videos_output) and [test_videos_output](test_videos_output) hold the labeled images and videos produced by the [P1.ipynb](P1.ipynb)
-* [test_images_output_DEBUG](test_videos_output_DEBUG) and [test_videos_output_DEBUG](test_videos_output_DEBUG) 
-hold the labeled images and videos produced by the [P1.ipynb](P1.ipynb) in debug mode
-* [create_gif.py](create_gif.py) creates the gif used in this report
+README:
+* [README.md](README.md): the file you are reading; this is the project writeup
+* [README_udacity.md](README_udacity.md): the original README from udacity which contains project instructions
+
+Code:
+* [Traffic_Sign_Classifier.ipynb](Traffic_Sign_Classifier.ipynb) is Jupyter notebook holding the top-level execution code used in this project
+* [tsc_utils.py](tsc_utils.py) holds all the code for data preprocessing, augmentation, model implementation training
+
+Reports:
+* [Traffic_Sign_Classifier_0709_Big_LeNet.html](reports/Traffic_Sign_Classifier_0709_Big_LeNet.html): 
+HTML of Traffic_Sign_Classifier.ipynb using lenet
+* [Traffic_Sign_Classifier_0709_Big_Sermanet.html](reports/Traffic_Sign_Classifier_0709_Big_Sermanet.html): 
+HTML of Traffic_Sign_Classifier.ipynb using sermanet
+* [report.html](report.html): required html report for submission, it is a copy of 
+[Traffic_Sign_Classifier_0709_Big_LeNet.html](reports/Traffic_Sign_Classifier_0709_Big_LeNet.html)
 
 <!--- comments
 lenet orig_lenet 139391
@@ -77,87 +81,175 @@ sermanet_v2 standard 3972139
 sermanet_v2 big 15796267
 --->
 
+# Data Set Exploration
+
+Summary statistics of the traffic signs data set calculated with Pandas:
+
+* Number of training examples = 34799
+* Number of validation examples = 4410
+* Number of testing examples = 12630
+* Image data shape = (32, 32, 3)
+* Number of classes = 43
+
+Normalized histograms of training, validation and testing sets show that the relative frequencies of occurence of different categories are consistent among the three data sets. 
+
+![](writing/sample_distribution_v2.png)
+
+Here are example images from a few classes (a full survey is available in [Traffic_Sign_Classifier.ipynb](Traffic_Sign_Classifier.ipynb))
+ 
+![](writing/example_images.png)
+
+
+# Design and Test a Model Architecture
+
+## Qualitative Findings
+
+I started with a relatively well-known network (LeNet5) with settings to keep the network size small in order to iterate more quickly on a few topics and get some qualitative intuition. 
+While none of these qualitative findings are conclusive, but they are useful initial guidelines
+
+For example: 
+* Are grayscale images better or should I use all color channels? What is the best way to "normalize" images regarding brightness, contrast and etc? 
+    * See [Data Preprocessing](#data-preprocessing)
+* How does the size of the data set compare the the size of the network? 
+    * Should I use much much large networks or the starting point of LeNet5 is already work very well?
+    * Is it better to "equalize" the sample count in each class or should I keep the relative occurrence as-is?
+    * Does having much more augmented data help accuracy?
+    * See [Data Autmentation](#data-augmentation)
+
+
+## Data Pre-processing and Augmentation
+
+### Data Pre-processing
+As shown in the previous section, the images within each class have very different brightness, sharpness and color saturation. 
+In order to present data to the model in a consistent fashion, therefore to allow the model generalize better into test set.
+
+Here are the steps in the preprocessing pipeline:
+
+1. Covert color images to grayscale images
+    * Through trial and error, I observed that using grayscale images seems to achieve better performance on test set. 
+    This is might be slight counter-intuitive. It might be because although color images provide more information, the image quality vary greatly and might have offset the benefit.
+
+2. Apply histogram equalization to get uniform contrast
+    * Instead of a global histogram equalization (HE), which might have over exposure or under exposure on the region contains useful information, 
+    I used a localized adaptive version - Contrast Limited Adaptive Histogram Equalization, with the setting ```cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))```
+
+3. Normalize to zero mean and unity variance
+    * This is to normalize the numerical values globally.
+    
+To illustrate this process, let's take a look at the following example. The first row are the original images. Row 2, 3 and 4 corresponds to the output of
+ step 1, 2 and 3 respectively. 
+We can see that the preprocessing pipeline is indeed capable of normalizing out different brightness, recovering contrast from poor quality color images, and yielding a set
+of more uniform quality images for use in the model.
+
+![](writing/preprocessing.png)
+
+
+### Data set augmentation
+
+A simple way to generate more data is to take advantage of the mirror symmetry in some of the signs. For example, in the sample images shown above,
+if flipped horizontally, all class 33 images would become valid samples for class 34, all class 30 images would still be valid samples for class 30. 
+This is implemented by ```flip_extend()``` in [tsc_utils.py](tsc_utils.py). (The credit of this flipping method goes to: https://github.com/navoshta)
+
+In addition, a small change to the image should not affect the classification if the classfier is robust and well generalized. Based on this, I implemented
+a set of functions to apply small changes to the sign images, these operations are:
+* zoom in or out
+* rotate left or right
+* shift x and/or y
+* sharpen or blur
+* random distort (implemented with ```cv2.warpPerspective()``` and randomized corners)
+
+Here is a example image with each of these operations applied 
+
+![](writing/augmentation.png)
+
+The overall function driving the augmentation is ```augment_data()``` in [tsc_utils.py](tsc_utils.py). 
+It has a scaling parameter ```factor``` that controls the magnitude of all these operations.
+
+
+I prepared 3 augmented data sets based on the flipping and augmentation methods discussed above. Only training and vaidation sets are augmented.
+All the models listed in the next table are trained with all 3 data sets in sequence, with decreasing learning rates.
+
+Here is a summary of the data sets:
+
+| Data set | N_train | N_validation | Augmentation method |
+| --- | ---: | ---: | ------------- |
+| dataset0 | 34,799 | 4,410 | Original data set |
+| dataset1 | 59,788 | 7,590  | Based on dataset0, applied ```flip_extend()``` |
+| dataset2 | 1,016,396 | 129,030 | Based on dataset1, applied ```augment_data()``` with ```factor=1.0``` |
+| dataset3 | 1,016,396 | 129,030 | Based on dataset1, applied ```augment_data()``` with ```factor=0.7``` |
+
+
+## Model Architecture
+
+### LeNet
+
+I used LeNet5 as a starting point due to its good performance on other image classification tasks and relative small network size.
+
+The LeNet model implemented here is slightly different than the classical implementation as summarized below.
+
+
+| Layer         		|     Description (this project)    			| 
+|:---------------------:|:---------------------------------------------:| 
+| Input         		| 32x32x1 grayscale image   							| 
+| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
+| RELU					|												|
+| Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
+| Convolution 3x3	    | etc.      									|
+| Fully connected		| etc.        									|
+| Softmax				| etc.        									|
+|						|												|
+|						|												|
+
+
+def lenet(x, params, is_training):
+    print(params)
+    do_batch_norm = False
+    if 'batch_norm' in params.keys():
+        if params['batch_norm']:
+            do_batch_norm = True
+
+    with tf.variable_scope('conv1'):
+        conv1 = conv_relu(x, kernel_size=params['conv1_k'], depth=params['conv1_d'], is_training=is_training,
+                          BN=do_batch_norm)
+    with tf.variable_scope('pool1'):
+        pool1 = pool(conv1, size=2)
+        pool1 = tf.cond(is_training, lambda: tf.nn.dropout(pool1, keep_prob=params['conv1_p']), lambda: pool1)
+    with tf.variable_scope('conv2'):
+        conv2 = conv_relu(pool1, kernel_size=params['conv2_k'], depth=params['conv2_d'], is_training=is_training,
+                          BN=do_batch_norm)
+    with tf.variable_scope('pool2'):
+        pool2 = pool(conv2, size=2)
+        pool2 = tf.cond(is_training, lambda: tf.nn.dropout(pool2, keep_prob=params['conv2_p']), lambda: pool2)
+
+    shape = pool2.get_shape().as_list()
+    pool2 = tf.reshape(pool2, [-1, shape[1] * shape[2] * shape[3]])
+    print('lenet pool2 reshaped size: ', pool2.get_shape().as_list())
+
+    with tf.variable_scope('fc3'):
+        fc3 = fully_connected_relu(pool2, size=params['fc3_size'], is_training=is_training, BN=do_batch_norm)
+        fc3 = tf.cond(is_training, lambda: tf.nn.dropout(fc3, keep_prob=params['fc3_p']), lambda: fc3)
+
+    with tf.variable_scope('fc4'):
+        fc4 = fully_connected_relu(fc3, size=params['fc4_size'], is_training=is_training, BN=do_batch_norm)
+        fc4 = tf.cond(is_training, lambda: tf.nn.dropout(fc4, keep_prob=params['fc4_p']), lambda: fc4)
+
+    with tf.variable_scope('out'):
+        logits = fully_connected(fc4, size=params['num_classes'], is_training=is_training)
+
+    return logits
+
+
+### Sermanet
 
 
 
-[//]: # (Image References)
-
-[image1]: ./examples/visualization.jpg "Visualization"
-[image2]: ./examples/grayscale.jpg "Grayscaling"
-[image3]: ./examples/random_noise.jpg "Random Noise"
-[image4]: ./examples/placeholder.png "Traffic Sign 1"
-[image5]: ./examples/placeholder.png "Traffic Sign 2"
-[image6]: ./examples/placeholder.png "Traffic Sign 3"
-[image7]: ./examples/placeholder.png "Traffic Sign 4"
-[image8]: ./examples/placeholder.png "Traffic Sign 5"
-
-
-In this project, I prepared a few augmented datasets (i.e. dataset1, dataset2 and dataset3) as listed below. 
-All the models listed in the next table are trained with all 3 datasets in sequence.
-
-| Dataset | No. of training examples | No. validation examples | Dataset generation method |
-| ------------- | ------------- | ------------- | ------------- |
-| dataset0 | 34,799 | 4,410 | Original dataset |
-| dataset1 | 59,788 | 7,590  | Based on dataset0, generated additional images by flipping images that have mirror symmetry|
-| dataset2 | 1,016,396 | 129,030 | Based on dataset1, add additional images by |
-| dataset3 | 1,016,396 | 129,030  | Content Cell  |
+### Sermanet_v2
 
 
 
-### Key files in this repo:
+## Model Training
 
 
-
-## Rubric Points
-### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/481/view) individually and describe how I addressed each point in my implementation.  
-
----
-### Writeup / README
-
-#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one. You can submit your writeup as markdown or pdf. You can use this template as a guide for writing the report. The submission includes the project code.
-
-You're reading it! and here is a link to my [project code](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/Traffic_Sign_Classifier.ipynb)
-
-### Data Set Summary & Exploration
-
-#### 1. Provide a basic summary of the data set. In the code, the analysis should be done using python, numpy and/or pandas methods rather than hardcoding results manually.
-
-I used the pandas library to calculate summary statistics of the traffic
-signs data set:
-
-* The size of training set is ?
-* The size of the validation set is ?
-* The size of test set is ?
-* The shape of a traffic sign image is ?
-* The number of unique classes/labels in the data set is ?
-
-#### 2. Include an exploratory visualization of the dataset.
-
-Here is an exploratory visualization of the data set. It is a bar chart showing how the data ...
-
-![alt text][image1]
-
-### Design and Test a Model Architecture
-
-#### 1. Describe how you preprocessed the image data. What techniques were chosen and why did you choose these techniques? Consider including images showing the output of each preprocessing technique. Pre-processing refers to techniques such as converting to grayscale, normalization, etc. (OPTIONAL: As described in the "Stand Out Suggestions" part of the rubric, if you generated additional data for training, describe why you decided to generate additional data, how you generated the data, and provide example images of the additional data. Then describe the characteristics of the augmented training set like number of images in the set, number of images for each class, etc.)
-
-As a first step, I decided to convert the images to grayscale because ...
-
-Here is an example of a traffic sign image before and after grayscaling.
-
-![alt text][image2]
-
-As a last step, I normalized the image data because ...
-
-I decided to generate additional data because ... 
-
-To add more data to the the data set, I used the following techniques because ... 
-
-Here is an example of an original image and an augmented image:
-
-![alt text][image3]
-
-The difference between the original data set and the augmented data set is the following ... 
 
 
 #### 2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
@@ -202,7 +294,7 @@ If a well known architecture was chosen:
 * How does the final model's accuracy on the training, validation and test set provide evidence that the model is working well?
  
 
-### Test a Model on New Images
+# Test Models on New Images
 
 #### 1. Choose five German traffic signs found on the web and provide them in the report. For each image, discuss what quality or qualities might be difficult to classify.
 
@@ -245,7 +337,10 @@ For the first image, the model is relatively sure that this is a stop sign (prob
 
 For the second image ... 
 
+
+
 ### (Optional) Visualizing the Neural Network (See Step 4 of the Ipython notebook for more details)
 #### 1. Discuss the visual output of your trained network's feature maps. What characteristics did the neural network use to make classifications?
+
 
 
